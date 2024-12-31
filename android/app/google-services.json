@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "552574779763",
+    "project_id": "muieen",
+    "storage_bucket": "muieen.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:552574779763:android:f3dda583580bb8258b8506",
+        "android_client_info": {
+          "package_name": "com.example.muieen_project"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBibxIPZn3tpnOKau77lGEDns0ALggxdt4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
