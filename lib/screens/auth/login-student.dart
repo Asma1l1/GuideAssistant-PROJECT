@@ -1,46 +1,59 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
-import 'package:muieen_project/providers/auth_provider.dart' ; 
-
+import '../../providers/auth_provider.dart';
 
 class LoginStudentPage extends StatefulWidget {
+  static const String screenRoute = '/LoginStudentPage';
+  const LoginStudentPage({Key? key}) : super(key: key);
+
   @override
   _LoginStudentPageState createState() => _LoginStudentPageState();
 }
 
 class _LoginStudentPageState extends State<LoginStudentPage> {
-  final TextEditingController _emailController = TextEditingController(); // حقل إدخال البريد الإلكتروني
-  final TextEditingController _passwordController = TextEditingController(); // حقل إدخال كلمة المرور
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  bool showSpinner = false;
 
   void _loginStudent() async {
-  final email = _emailController.text.trim(); // قراءة البريد الإلكتروني
-  final password = _passwordController.text.trim(); // قراءة كلمة المرور
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
 
-  if (email.isEmpty || password.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('يرجى إدخال البريد الإلكتروني وكلمة المرور')),
-    );
-    return;
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('يرجى إدخال البريد الإلكتروني وكلمة المرور')),
+      );
+      return;
+    }
+
+    setState(() {
+      showSpinner = true;
+    });
+
+    try {
+      // تسجيل الدخول
+      await Provider.of<AuthProvider>(context, listen: false)
+          .signIn(email, password, 'STUDENT');
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('تم تسجيل الدخول بنجاح')),
+      );
+
+      Navigator.pushReplacementNamed(
+        context,
+        '/StudentHomePage',
+        arguments: email, // تمرير البريد الإلكتروني كمعرف للطالب
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('خطأ أثناء تسجيل الدخول: $e')),
+      );
+    } finally {
+      setState(() {
+        showSpinner = false;
+      });
+    }
   }
-
-  try {
-    // استدعاء الطريقة signIn
-    await Provider.of<AuthProvider>(context, listen: false)
-        .signIn(email, password, 'STUDENT'); // تمرير النوع 'STUDENT'
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('تم تسجيل الدخول بنجاح')),
-    );
-    Navigator.pushNamed(context, '/studentDashboard'); // الانتقال إلى لوحة التحكم
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('خطأ أثناء تسجيل الدخول: $e')), // عرض الخطأ
-    );
-  }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -54,6 +67,7 @@ class _LoginStudentPageState extends State<LoginStudentPage> {
           children: [
             TextField(
               controller: _emailController,
+              keyboardType: TextInputType.emailAddress,
               decoration: InputDecoration(
                 labelText: 'الإيميل الأكاديمي',
                 prefixIcon: Icon(Icons.email),
@@ -61,24 +75,29 @@ class _LoginStudentPageState extends State<LoginStudentPage> {
             ),
             SizedBox(height: 16),
             TextField(
+              obscureText: true,
               controller: _passwordController,
               decoration: InputDecoration(
                 labelText: 'كلمة السر',
                 prefixIcon: Icon(Icons.lock),
               ),
-              obscureText: true,
             ),
             SizedBox(height: 32),
-            ElevatedButton(
-              onPressed: _loginStudent,
-              child: Text('دخول'),
-            ),
+            showSpinner
+                ? CircularProgressIndicator()
+                : ElevatedButton(
+                    child: Text('دخول'),
+                    onPressed: _loginStudent,
+                  ),
           ],
         ),
       ),
     );
   }
 }
+
+
+
 
 // //import 'screens/firstPage.dart';
 
