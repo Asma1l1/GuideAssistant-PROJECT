@@ -30,7 +30,7 @@ class StudentModel extends UserModel {
       id: id,
       email: data['email'] ?? '',
       type: data['type'] ?? 'STUDENT',
-      advisorUsername: data['advisorUsername'] ?? '',
+      advisorUsername: data['advisorID'] ?? '',
       college: data['college'] ?? '',
       major: data['major'] ?? '',
       gpa: double.tryParse(data['gpa'].toString()) ?? 0.0,
