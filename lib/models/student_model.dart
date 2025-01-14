@@ -2,7 +2,8 @@ import 'user_model.dart';
 
 
 class StudentModel extends UserModel {
-  final String advisorUsername;
+  final String name;
+  final String advisorID;
   final String college;
   final String major;
   final double gpa;
@@ -12,10 +13,12 @@ class StudentModel extends UserModel {
   final int remainingHours;
 
   StudentModel({
-    required String id,
-    required String email,
-    required String type,
-    required this.advisorUsername,
+    required super.id,
+    required this.name,
+
+    required super.email,
+    required super.type,
+    required this.advisorID,
     required this.college,
     required this.major,
     required this.gpa,
@@ -23,14 +26,15 @@ class StudentModel extends UserModel {
     required this.completedHours,
     required this.registeredHours,
     required this.remainingHours,
-  }) : super(id: id, email: email, type: type);
+  });
 
   factory StudentModel.fromFirestore(Map<String, dynamic> data, String id) {
     return StudentModel(
       id: id,
+      name: data['name'] ?? '',
       email: data['email'] ?? '',
       type: data['type'] ?? 'STUDENT',
-      advisorUsername: data['advisorID'] ?? '',
+      advisorID: data['advisorID'] ?? '',
       college: data['college'] ?? '',
       major: data['major'] ?? '',
       gpa: double.tryParse(data['gpa'].toString()) ?? 0.0,
@@ -45,7 +49,8 @@ class StudentModel extends UserModel {
   Map<String, dynamic> toFirestore() {
     return super.toFirestore()
       ..addAll({
-        'advisorUsername': advisorUsername,
+        'name': name,
+        'advisorID': advisorID,
         'college': college,
         'major': major,
         'gpa': gpa,

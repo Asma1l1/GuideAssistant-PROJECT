@@ -1,7 +1,8 @@
 import 'user_model.dart';
 
 class AdvisorModel extends UserModel {
-  final String username;
+  final String first_name;
+  final String last_name;
   final String department;
   final int studentsCount;
 
@@ -9,7 +10,8 @@ class AdvisorModel extends UserModel {
     required String id,
     required String email,
     required String type,
-    required this.username,
+    required this.last_name,
+    required this.first_name,
     required this.department,
     required this.studentsCount,
   }) : super(id: id, email: email, type: type);
@@ -19,7 +21,8 @@ class AdvisorModel extends UserModel {
       id: id,
       email: data['email'] ?? '',
       type: data['type'] ?? 'ADVISOR',
-      username: data['username'] ?? '',
+      first_name: data['firstName'] ?? '',
+      last_name: data['lastName'] ?? '',
       department: data['department'] ?? '',
       studentsCount: data['studentsCount'] ?? 0,
     );
@@ -29,7 +32,9 @@ class AdvisorModel extends UserModel {
   Map<String, dynamic> toFirestore() {
     return super.toFirestore()
       ..addAll({
-        'username': username,
+        'first name': first_name,
+        'last name': last_name,
+        
         'department': department,
         'studentsCount': studentsCount,
       });
