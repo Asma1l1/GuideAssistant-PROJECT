@@ -3,7 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
-import 'package:muieen_project/providers/auth_provider.dart' ; 
+import 'package:muieen_project/providers/auth_provider.dart';
 
 class LoginAdvisorPage extends StatefulWidget {
   @override
@@ -11,35 +11,49 @@ class LoginAdvisorPage extends StatefulWidget {
 }
 
 class _LoginAdvisorPageState extends State<LoginAdvisorPage> {
-  final TextEditingController _emailController = TextEditingController(); // حقل إدخال البريد الإلكتروني
-  final TextEditingController _passwordController = TextEditingController(); // حقل إدخال كلمة المرور
+  final TextEditingController _emailController =
+      TextEditingController(); // حقل إدخال البريد الإلكتروني
+  final TextEditingController _passwordController =
+      TextEditingController(); // حقل إدخال كلمة المرور
+
+  // التعبير النمطي للتحقق من صيغة البريد الإلكتروني
+  final RegExp emailRegExp = RegExp(r'^[a-zA-Z0-9._%+-]+@uqu\.edu\.sa$');
 
   void _loginAdvisor() async {
-  final email = _emailController.text.trim(); // قراءة البريد الإلكتروني
-  final password = _passwordController.text.trim(); // قراءة كلمة المرور
+    final email = _emailController.text.trim(); // قراءة البريد الإلكتروني
+    final password = _passwordController.text.trim(); // قراءة كلمة المرور
 
-  if (email.isEmpty || password.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('يرجى إدخال البريد الإلكتروني وكلمة المرور')),
-    );
-    return;
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('يرجى إدخال البريد الإلكتروني وكلمة المرور')),
+      );
+      return;
+    }
+
+    // التحقق من صحة البريد الإلكتروني
+    if (!emailRegExp.hasMatch(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('يرجى إدخال بريد إلكتروني بصيغة @uqu.edu.sa')),
+      );
+      return;
+    }
+
+    try {
+      // استدعاء الطريقة signIn
+      await Provider.of<AuthProvider>(context, listen: false)
+          .signIn(email, password, 'ADVISOR'); // تمرير النوع 'ADVISOR'
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('تم تسجيل الدخول بنجاح')),
+      );
+      Navigator.pushNamed(
+          context, '/advisorDashboard'); // الانتقال إلى لوحة التحكم
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('خطأ أثناء تسجيل الدخول: $e')), // عرض الخطأ
+      );
+    }
   }
-
-  try {
-    // استدعاء الطريقة signIn
-    await Provider.of<AuthProvider>(context, listen: false)
-        .signIn(email, password, 'ADVISOR'); // تمرير النوع 'ADVISOR'
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('تم تسجيل الدخول بنجاح')),
-    );
-    Navigator.pushNamed(context, '/advisorDashboard'); // الانتقال إلى لوحة التحكم
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('خطأ أثناء تسجيل الدخول: $e')), // عرض الخطأ
-    );
-  }
-}
 
   @override
   Widget build(BuildContext context) {

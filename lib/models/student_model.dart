@@ -1,9 +1,10 @@
 import 'user_model.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 
 class StudentModel extends UserModel {
   final String name;
-  final String advisorID;
+  final DocumentReference advisorID;
   final String college;
   final String major;
   final double gpa;
@@ -15,7 +16,6 @@ class StudentModel extends UserModel {
   StudentModel({
     required super.id,
     required this.name,
-
     required super.email,
     required super.type,
     required this.advisorID,
@@ -31,13 +31,13 @@ class StudentModel extends UserModel {
   factory StudentModel.fromFirestore(Map<String, dynamic> data, String id) {
     return StudentModel(
       id: id,
-      name: data['name'] ?? '',
-      email: data['email'] ?? '',
+      name: data['name'] ?? 'غير متوفر',
+      email: data['email'] ?? 'غير متوفر',
       type: data['type'] ?? 'STUDENT',
       advisorID: data['advisorID'] ?? '',
-      college: data['college'] ?? '',
-      major: data['major'] ?? '',
-      gpa: double.tryParse(data['gpa'].toString()) ?? 0.0,
+      college: data['college'] ?? 'غير متوفر',
+      major: data['major'] ?? 'غير متوفر',
+      gpa: double.tryParse(data['gpa']?.toString() ?? '0') ?? 0.0,
       level: data['level'] ?? 0,
       completedHours: data['completedHours'] ?? 0,
       registeredHours: data['registeredHours'] ?? 0,

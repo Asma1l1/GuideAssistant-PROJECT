@@ -15,13 +15,25 @@ class _LoginStudentPageState extends State<LoginStudentPage> {
   final TextEditingController _passwordController = TextEditingController();
   bool showSpinner = false;
 
+  // التعبير النمطي للتحقق من صيغة البريد الإلكتروني
+  final RegExp emailRegExp = RegExp(r'^[a-zA-Z0-9._%+-]+@uqu\.edu\.sa$');
+
   void _loginStudent() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
 
+    // التحقق من أن الحقول ليست فارغة
     if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('يرجى إدخال البريد الإلكتروني وكلمة المرور')),
+      );
+      return;
+    }
+
+    // التحقق من صحة البريد الإلكتروني
+    if (!emailRegExp.hasMatch(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('يرجى إدخال بريد إلكتروني بصيغة @uqu.edu.sa')),
       );
       return;
     }
