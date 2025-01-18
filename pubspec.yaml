@@ -71,7 +71,7 @@ flutter:
       - assets\icons\firstPage.png
       - assets\icons\login.png
       - assets\icons\stHome.png
-  #   - images/a_dot_ham.jpeg
+      - assets\icons\notificationBackground.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/student_model.dart';
-import '../../screens/main/firstPage.dart';
 
 class StudentHomePage extends StatefulWidget {
   static const String screenRoute = '/StudentHomePage';
@@ -26,247 +25,242 @@ class _StudentHomePageState extends State<StudentHomePage> {
 
   Future<StudentModel?> fetchStudentData() async {
     try {
-      print('البريد الإلكتروني المستخدم: ${widget.email}');
       QuerySnapshot querySnapshot = await FirebaseFirestore.instance
           .collection('users')
           .where('email', isEqualTo: widget.email.toLowerCase().trim())
           .get();
 
-      print('عدد المستندات التي تم العثور عليها: ${querySnapshot.docs.length}');
       if (querySnapshot.docs.isEmpty) {
-        print('لا توجد بيانات مطابقة للبريد الإلكتروني: ${widget.email}');
         return null;
       }
 
       final studentDoc = querySnapshot.docs.first;
-      print('تم العثور على بيانات الطالب: ${studentDoc.data()}');
       return StudentModel.fromFirestore(
           studentDoc.data() as Map<String, dynamic>, studentDoc.id);
     } catch (e) {
-      print('خطأ أثناء جلب بيانات الطالب: $e');
       return null;
     }
   }
 
   Future<String?> fetchAdvisorName() async {
     try {
-      // جلب بيانات الطالب أولاً للحصول على advisorID كـ Reference
       final studentSnapshot = await FirebaseFirestore.instance
           .collection('users')
           .where('email', isEqualTo: widget.email.toLowerCase().trim())
           .get();
 
       if (studentSnapshot.docs.isEmpty) {
-        print('لا توجد بيانات مطابقة للبريد الإلكتروني: ${widget.email}');
         return null;
       }
 
       final studentData = studentSnapshot.docs.first.data();
       if (!studentData.containsKey('advisorID')) {
-        print('الحقل advisorID غير موجود في بيانات الطالب.');
         return null;
       }
 
       final advisorRef = studentData['advisorID'] as DocumentReference;
-
-      print('تم العثور على advisorID: $advisorRef');
-
-      // جلب بيانات المرشد باستخدام DocumentReference
       final advisorSnapshot = await advisorRef.get();
 
       if (!advisorSnapshot.exists) {
-        print('تعذر العثور على بيانات المرشد.');
         return null;
       }
 
       final advisorData = advisorSnapshot.data() as Map<String, dynamic>;
-      print('تم العثور على بيانات المرشد: $advisorData');
-
-      final firstName = advisorData['first_name'] ?? 'غير معروف';
-      final lastName = advisorData['last_name'] ?? 'غير معروف';
+      final firstName = advisorData['firstName'] ?? 'غير معروف';
+      final lastName = advisorData['lastName'] ?? 'غير معروف';
 
       return '$firstName $lastName';
     } catch (e) {
-      print('خطأ أثناء جلب بيانات المرشد: $e');
       return null;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('الصفحة الرئيسية للطالب'),
-        actions: [
-          PopupMenuButton<String>(
-            onSelected: (value) {
-              if (value == 'logout') {
-                Navigator.pushReplacementNamed(context, '/FirstPage');
-              }
+    return Directionality(
+      textDirection: TextDirection.rtl, // لضبط النصوص من اليمين إلى اليسار
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text('الصفحة الرئيسية للطالب'),
+          leading: IconButton(
+            icon: Icon(Icons.notifications),
+            onPressed: () async {
+              final studentRef = await FirebaseFirestore.instance
+                  .collection('users')
+                  .where('email', isEqualTo: widget.email.toLowerCase().trim())
+                  .get()
+                  .then((snapshot) => snapshot.docs.first.reference);
+
+              Navigator.pushNamed(
+                context,
+                '/StudentNotificationsScreen',
+                arguments: studentRef,
+              );
             },
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'logout',
-                child: Row(
-                  children: [
-                    Icon(Icons.logout, color: Colors.black),
-                    SizedBox(width: 8),
-                    Text('تسجيل الخروج'),
-                  ],
-                ),
+          ),
+          actions: [
+            Builder(
+              builder: (context) => IconButton(
+                icon: Icon(Icons.menu),
+                onPressed: () {
+                  Scaffold.of(context).openEndDrawer();
+                },
               ),
-            ],
-          ),
-        ],
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('assets/icons/stHome.png'),
-            fit: BoxFit.cover,
-          ),
+            ),
+          ],
         ),
-        child: FutureBuilder<StudentModel?>(
-          future: _studentData,
-          builder: (context, studentSnapshot) {
-            if (studentSnapshot.connectionState == ConnectionState.waiting) {
-              return Center(child: CircularProgressIndicator());
-            } else if (studentSnapshot.hasError) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'خطأ أثناء تحميل بيانات الطالب.\nالرجاء المحاولة مرة أخرى.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.red, fontSize: 16),
-                    ),
-                    SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          _studentData = fetchStudentData();
-                        });
-                      },
-                      child: Text('إعادة المحاولة'),
-                    ),
-                  ],
-                ),
-              );
-            } else if (!studentSnapshot.hasData ||
-                studentSnapshot.data == null) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'تعذر العثور على بيانات الطالب.\nتأكد من صحة البريد الإلكتروني أو وجود البيانات في النظام.',
-                      textAlign: TextAlign.center,
-                    ),
-                    SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          _studentData = fetchStudentData();
-                        });
-                      },
-                      child: Text('إعادة المحاولة'),
-                    ),
-                  ],
-                ),
-              );
-            }
+        endDrawer: _buildDrawer(context),
+        body: Container(
+          decoration: BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage('assets/icons/stHome.png'),
+              fit: BoxFit.cover,
+            ),
+          ),
+          child: FutureBuilder<StudentModel?>(
+            future: _studentData,
+            builder: (context, studentSnapshot) {
+              if (studentSnapshot.connectionState == ConnectionState.waiting) {
+                return Center(child: CircularProgressIndicator());
+              } else if (studentSnapshot.hasError ||
+                  studentSnapshot.data == null) {
+                return Center(
+                  child: Text(
+                    'تعذر العثور على بيانات الطالب.\nتأكد من صحة البريد الإلكتروني أو وجود البيانات في النظام.',
+                    textAlign: TextAlign.center,
+                  ),
+                );
+              }
 
-            final student = studentSnapshot.data!;
+              final student = studentSnapshot.data!;
+              return FutureBuilder<String?>(
+                future: _advisorName,
+                builder: (context, advisorSnapshot) {
+                  if (advisorSnapshot.connectionState ==
+                      ConnectionState.waiting) {
+                    return Center(child: CircularProgressIndicator());
+                  }
 
-            return FutureBuilder<String?>(
-              future: _advisorName,
-              builder: (context, advisorSnapshot) {
-                if (advisorSnapshot.connectionState ==
-                    ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
-                } else if (advisorSnapshot.hasError) {
-                  return Center(
+                  final advisorName = advisorSnapshot.data ?? 'غير متوفر';
+                  return Padding(
+                    padding: const EdgeInsets.all(16.0),
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        SizedBox(height: 230), // المسافة العلوية
                         Text(
-                          'خطأ أثناء تحميل بيانات المرشد.',
-                          style: TextStyle(color: Colors.red, fontSize: 16),
+                          'مرحباً ${student.name}',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                        SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: () {
-                            setState(() {
-                              _advisorName = fetchAdvisorName();
-                            });
-                          },
-                          child: Text('إعادة المحاولة'),
+                        SizedBox(height: 8),
+                        Text(
+                          'مرشدك الأكاديمي: $advisorName',
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                        SizedBox(height: 20),
+                        // استخدام Expanded مع shrinkWrap لتجنب overflow
+                        Expanded(
+                          child: GridView.count(
+                            crossAxisCount: 3,
+                            mainAxisSpacing: 16,
+                            crossAxisSpacing: 16,
+                            shrinkWrap:
+                                true, // تحديد حجم GridView بناءً على المحتوى
+                            physics:
+                                NeverScrollableScrollPhysics(), // تعطيل التمرير داخل GridView
+                            children: [
+                              _buildGridButton(
+                                context,
+                                'نموذج الحذف',
+                                Icons.delete,
+                                '/deleteForm',
+                              ),
+                              _buildGridButton(
+                                context,
+                                'نموذج الإضافة',
+                                Icons.add,
+                                '/addForm',
+                              ),
+                              _buildGridButton(
+                                context,
+                                'نموذج تغيير شعبة',
+                                Icons.edit,
+                                '/changeSectionForm',
+                              ),
+                              _buildGridButton(
+                                context,
+                                'نموذج الطلبات الارتباطية',
+                                Icons.link,
+                                '/associativeForm',
+                              ),
+                              _buildGridButton(
+                                context,
+                                'الجدول الدراسي',
+                                Icons.schedule,
+                                '/schedulePage',
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
                   );
-                }
-
-                final advisorName = advisorSnapshot.data ?? 'غير متوفر';
-
-                return Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'مرحباً ${student.name}',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        'مرشدك الأكاديمي: $advisorName',
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                      SizedBox(height: 20),
-                      Expanded(
-                        child: GridView(
-                          gridDelegate:
-                              SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            crossAxisSpacing: 16,
-                            mainAxisSpacing: 16,
-                          ),
-                          children: [
-                            _buildMenuButton(
-                              context,
-                              'نموذج الحذف',
-                              Icons.delete,
-                              '/deleteForm',
-                            ),
-                            _buildMenuButton(
-                              context,
-                              'نموذج الإضافة',
-                              Icons.add,
-                              '/addForm',
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            );
-          },
+                },
+              );
+            },
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildMenuButton(
+  Widget _buildDrawer(BuildContext context) {
+    return Drawer(
+      child: ListView(
+        children: [
+          DrawerHeader(
+            decoration: BoxDecoration(color: Colors.blue),
+            child: Text(
+              'القائمة الجانبية',
+              style: TextStyle(color: Colors.white, fontSize: 24),
+            ),
+          ),
+          ListTile(
+            leading: Icon(Icons.folder),
+            title: Text('الملف الأكاديمي'),
+            onTap: () {
+              Navigator.pushNamed(context, '/academicProfile');
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.history),
+            title: Text('سجل الطلبات'),
+            onTap: () {
+              Navigator.pushNamed(context, '/requestLog');
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.logout, color: Colors.red),
+            title: Text(
+              'تسجيل الخروج',
+              style: TextStyle(color: Colors.red),
+            ),
+            onTap: () {
+              Navigator.pushReplacementNamed(context, '/FirstPage');
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGridButton(
       BuildContext context, String title, IconData icon, String route) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
@@ -274,7 +268,7 @@ class _StudentHomePageState extends State<StudentHomePage> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.grey[300],
         foregroundColor: Colors.black,
         elevation: 4,
       ),
@@ -289,7 +283,7 @@ class _StudentHomePageState extends State<StudentHomePage> {
           Text(
             title,
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 16),
+            style: TextStyle(fontSize: 14),
           ),
         ],
       ),
