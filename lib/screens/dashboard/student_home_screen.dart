@@ -3,10 +3,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/student_model.dart';
 
 class StudentHomePage extends StatefulWidget {
-  static const String screenRoute = '/StudentHomePage';
-  final String email;
+  final DocumentReference studentRef;
 
-  const StudentHomePage({Key? key, required this.email}) : super(key: key);
+  const StudentHomePage({Key? key, required this.studentRef}) : super(key: key);
 
   @override
   _StudentHomePageState createState() => _StudentHomePageState();
@@ -25,35 +24,29 @@ class _StudentHomePageState extends State<StudentHomePage> {
 
   Future<StudentModel?> fetchStudentData() async {
     try {
-      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .where('email', isEqualTo: widget.email.toLowerCase().trim())
-          .get();
+      final studentSnapshot = await widget.studentRef.get();
 
-      if (querySnapshot.docs.isEmpty) {
+      if (!studentSnapshot.exists) {
         return null;
       }
 
-      final studentDoc = querySnapshot.docs.first;
-      return StudentModel.fromFirestore(
-          studentDoc.data() as Map<String, dynamic>, studentDoc.id);
+      final studentDoc = studentSnapshot.data() as Map<String, dynamic>;
+      return StudentModel.fromFirestore(studentDoc, widget.studentRef.id);
     } catch (e) {
+      print("Error fetching student data: $e");
       return null;
     }
   }
 
   Future<String?> fetchAdvisorName() async {
     try {
-      final studentSnapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .where('email', isEqualTo: widget.email.toLowerCase().trim())
-          .get();
+      final studentSnapshot = await widget.studentRef.get();
 
-      if (studentSnapshot.docs.isEmpty) {
+      if (!studentSnapshot.exists) {
         return null;
       }
 
-      final studentData = studentSnapshot.docs.first.data();
+      final studentData = studentSnapshot.data() as Map<String, dynamic>;
       if (!studentData.containsKey('advisorID')) {
         return null;
       }
@@ -71,6 +64,7 @@ class _StudentHomePageState extends State<StudentHomePage> {
 
       return '$firstName $lastName';
     } catch (e) {
+      print("Error fetching advisor name: $e");
       return null;
     }
   }
@@ -78,36 +72,20 @@ class _StudentHomePageState extends State<StudentHomePage> {
   @override
   Widget build(BuildContext context) {
     return Directionality(
-      textDirection: TextDirection.rtl, // لضبط النصوص من اليمين إلى اليسار
+      textDirection: TextDirection.rtl,
       child: Scaffold(
         appBar: AppBar(
           title: Text('الصفحة الرئيسية للطالب'),
           leading: IconButton(
             icon: Icon(Icons.notifications),
             onPressed: () async {
-              final studentRef = await FirebaseFirestore.instance
-                  .collection('users')
-                  .where('email', isEqualTo: widget.email.toLowerCase().trim())
-                  .get()
-                  .then((snapshot) => snapshot.docs.first.reference);
-
               Navigator.pushNamed(
                 context,
                 '/StudentNotificationsScreen',
-                arguments: studentRef,
+                arguments: widget.studentRef, // تمرير مرجع الطالب بشكل صحيح
               );
             },
           ),
-          actions: [
-            Builder(
-              builder: (context) => IconButton(
-                icon: Icon(Icons.menu),
-                onPressed: () {
-                  Scaffold.of(context).openEndDrawer();
-                },
-              ),
-            ),
-          ],
         ),
         endDrawer: _buildDrawer(context),
         body: Container(
@@ -126,7 +104,7 @@ class _StudentHomePageState extends State<StudentHomePage> {
                   studentSnapshot.data == null) {
                 return Center(
                   child: Text(
-                    'تعذر العثور على بيانات الطالب.\nتأكد من صحة البريد الإلكتروني أو وجود البيانات في النظام.',
+                    'تعذر العثور على بيانات الطالب.\nتأكد من صحة البيانات.',
                     textAlign: TextAlign.center,
                   ),
                 );
@@ -147,64 +125,84 @@ class _StudentHomePageState extends State<StudentHomePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        SizedBox(height: 230), // المسافة العلوية
+                        SizedBox(height: 230),
                         Text(
                           'مرحباً ${student.name}',
                           style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
+                              fontSize: 24, fontWeight: FontWeight.bold),
                         ),
                         SizedBox(height: 8),
                         Text(
                           'مرشدك الأكاديمي: $advisorName',
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: Colors.grey[700],
-                          ),
+                          style:
+                              TextStyle(fontSize: 18, color: Colors.grey[700]),
                         ),
                         SizedBox(height: 20),
-                        // استخدام Expanded مع shrinkWrap لتجنب overflow
                         Expanded(
                           child: GridView.count(
                             crossAxisCount: 3,
                             mainAxisSpacing: 16,
                             crossAxisSpacing: 16,
-                            shrinkWrap:
-                                true, // تحديد حجم GridView بناءً على المحتوى
-                            physics:
-                                NeverScrollableScrollPhysics(), // تعطيل التمرير داخل GridView
+                            shrinkWrap: true,
+                            physics: NeverScrollableScrollPhysics(),
                             children: [
                               _buildGridButton(
                                 context,
                                 'نموذج الحذف',
                                 Icons.delete,
-                                '/deleteForm',
+                                () {
+                                  Navigator.pushNamed(
+                                    context,
+                                    '/delete_request_screen',
+                                    arguments: widget.studentRef,
+                                  );
+                                },
                               ),
                               _buildGridButton(
-                                context,
-                                'نموذج الإضافة',
-                                Icons.add,
-                                '/addForm',
-                              ),
+                                  context, 'نموذج الإضافة', Icons.add, () {
+                                Navigator.pushNamed(
+                                  context,
+                                  '/delete_request_screen',
+                                  arguments: widget.studentRef,
+                                );
+                              }),
+                              _buildGridButton(context, 'نموذج تغيير شعبة',
+                                  Icons.edit, () {}),
                               _buildGridButton(
-                                context,
-                                'نموذج تغيير شعبة',
-                                Icons.edit,
-                                '/changeSectionForm',
-                              ),
-                              _buildGridButton(
-                                context,
-                                'نموذج الطلبات الارتباطية',
-                                Icons.link,
-                                '/associativeForm',
-                              ),
+                                  context,
+                                  'نموذج الطلبات الارتباطية',
+                                  Icons.link,
+                                  () {}),
                               _buildGridButton(
                                 context,
                                 'الجدول الدراسي',
                                 Icons.schedule,
-                                '/schedulePage',
-                              ),
+                                () async {
+                                  final studentSnapshot =
+                                      await widget.studentRef.get();
+                                  if (studentSnapshot.exists) {
+                                    final studentData = studentSnapshot.data()
+                                        as Map<String, dynamic>;
+                                    if (studentData
+                                        .containsKey('scheduleRef')) {
+                                      DocumentReference scheduleRef =
+                                          studentData['scheduleRef'];
+                                      Navigator.pushNamed(
+                                        context,
+                                        '/scheduleScreen',
+                                        arguments: scheduleRef,
+                                      );
+                                    } else {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                            content: Text(
+                                                'تعذر العثور على جدول دراسي لهذا الطالب')),
+                                      );
+                                    }
+                                  }
+                                },
+                              )
                             ],
                           ),
                         ),
@@ -226,10 +224,8 @@ class _StudentHomePageState extends State<StudentHomePage> {
         children: [
           DrawerHeader(
             decoration: BoxDecoration(color: Colors.blue),
-            child: Text(
-              'القائمة الجانبية',
-              style: TextStyle(color: Colors.white, fontSize: 24),
-            ),
+            child: Text('القائمة الجانبية',
+                style: TextStyle(color: Colors.white, fontSize: 24)),
           ),
           ListTile(
             leading: Icon(Icons.folder),
@@ -247,10 +243,7 @@ class _StudentHomePageState extends State<StudentHomePage> {
           ),
           ListTile(
             leading: Icon(Icons.logout, color: Colors.red),
-            title: Text(
-              'تسجيل الخروج',
-              style: TextStyle(color: Colors.red),
-            ),
+            title: Text('تسجيل الخروج', style: TextStyle(color: Colors.red)),
             onTap: () {
               Navigator.pushReplacementNamed(context, '/FirstPage');
             },
@@ -260,31 +253,24 @@ class _StudentHomePageState extends State<StudentHomePage> {
     );
   }
 
-  Widget _buildGridButton(
-      BuildContext context, String title, IconData icon, String route) {
+  Widget _buildGridButton(BuildContext context, String title, IconData icon,
+      VoidCallback onPressed) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
         padding: EdgeInsets.all(16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         backgroundColor: Colors.grey[300],
         foregroundColor: Colors.black,
         elevation: 4,
       ),
-      onPressed: () {
-        Navigator.pushNamed(context, route);
-      },
+      onPressed: onPressed,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(icon, size: 40),
           SizedBox(height: 8),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 14),
-          ),
+          Text(title,
+              textAlign: TextAlign.center, style: TextStyle(fontSize: 14)),
         ],
       ),
     );

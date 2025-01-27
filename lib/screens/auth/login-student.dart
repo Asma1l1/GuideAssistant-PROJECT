@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
@@ -51,11 +52,23 @@ class _LoginStudentPageState extends State<LoginStudentPage> {
         SnackBar(content: Text('تم تسجيل الدخول بنجاح')),
       );
 
-      Navigator.pushReplacementNamed(
-        context,
-        '/StudentHomePage',
-        arguments: email, // تمرير البريد الإلكتروني كمعرف للطالب
-      );
+      final studentSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('email', isEqualTo: email.toLowerCase().trim())
+          .get();
+
+      if (studentSnapshot.docs.isNotEmpty) {
+        final studentRef = studentSnapshot.docs.first.reference;
+        Navigator.pushReplacementNamed(
+          context,
+          '/StudentHomePage',
+          arguments: studentRef, // تمرير المرجع ككائن DocumentReference
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('البريد الإلكتروني غير موجود')),
+        );
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('خطأ أثناء تسجيل الدخول: $e')),

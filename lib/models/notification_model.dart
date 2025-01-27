@@ -7,6 +7,7 @@ class NotificationModel {
   final String status;
   final String message;
   final DateTime timestamp;
+  final bool isRead; // لتتبع حالة الإشعار
 
   NotificationModel({
     required this.id,
@@ -15,6 +16,7 @@ class NotificationModel {
     required this.status,
     required this.message,
     required this.timestamp,
+    this.isRead = false,
   });
 
   factory NotificationModel.fromFirestore(Map<String, dynamic> data, String id) {
@@ -25,6 +27,7 @@ class NotificationModel {
       status: data['status'] ?? '',
       message: data['message'] ?? '',
       timestamp: (data['timestamp'] as Timestamp).toDate(),
+      isRead: data['isRead'] ?? false, // معالجة القيمة الافتراضية
     );
   }
 
@@ -35,6 +38,8 @@ class NotificationModel {
       'status': status,
       'message': message,
       'timestamp': Timestamp.fromDate(timestamp),
+      'isRead': isRead, // تخزين حالة الإشعار
     };
   }
 }
+

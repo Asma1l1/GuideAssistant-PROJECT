@@ -1,10 +1,10 @@
 import 'user_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-
 class StudentModel extends UserModel {
   final String name;
-  final DocumentReference advisorID;
+  final DocumentReference advisorRef;
+  final DocumentReference scheduleRef; // مرجع إلى الجدول في قاعدة البيانات
   final String college;
   final String major;
   final double gpa;
@@ -18,7 +18,8 @@ class StudentModel extends UserModel {
     required this.name,
     required super.email,
     required super.type,
-    required this.advisorID,
+    required this.advisorRef,
+    required this.scheduleRef, // إضافة المتغير الجديد
     required this.college,
     required this.major,
     required this.gpa,
@@ -34,7 +35,8 @@ class StudentModel extends UserModel {
       name: data['name'] ?? 'غير متوفر',
       email: data['email'] ?? 'غير متوفر',
       type: data['type'] ?? 'STUDENT',
-      advisorID: data['advisorID'] ?? '',
+      advisorRef: data['advisorID'] ?? FirebaseFirestore.instance.doc('/advisors/غير_متوفر'),
+      scheduleRef: data['scheduleRef'] ?? FirebaseFirestore.instance.doc('/schedules/غير_متوفر'), // تحميل مرجع الجدول
       college: data['college'] ?? 'غير متوفر',
       major: data['major'] ?? 'غير متوفر',
       gpa: double.tryParse(data['gpa']?.toString() ?? '0') ?? 0.0,
@@ -50,7 +52,8 @@ class StudentModel extends UserModel {
     return super.toFirestore()
       ..addAll({
         'name': name,
-        'advisorID': advisorID,
+        'advisorID': advisorRef,
+        'scheduleRef': scheduleRef, // إضافة مرجع الجدول إلى Firestore
         'college': college,
         'major': major,
         'gpa': gpa,
@@ -61,3 +64,4 @@ class StudentModel extends UserModel {
       });
   }
 }
+
