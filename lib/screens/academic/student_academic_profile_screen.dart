@@ -1,18 +1,42 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:muieen_project/providers/advisor_provider.dart';
+import 'package:muieen_project/providers/auth_provider.dart';
+import 'package:provider/provider.dart';
 import '../../models/student_model.dart';
+import '../../providers/student_provider.dart';
 import '../widgets/student_app_drawer.dart';
 import '../widgets/customAppBar.dart';
 
-class AcademicProfilePage extends StatelessWidget {
-  final StudentModel student;
-
-  const AcademicProfilePage({
+class StudentAcademicProfilePage extends StatelessWidget {
+  const StudentAcademicProfilePage({
     super.key,
-    required this.student,
   });
 
   @override
   Widget build(BuildContext context) {
+    final authProvider = Provider.of<AuthProvider>(context);
+    final studentProvider = Provider.of<StudentProvider>(context);
+    final advisorProvider = Provider.of<AdvisorProvider>(context);
+    final student = studentProvider.student;
+    final advisor = advisorProvider.advisor;
+
+    // Fetch student and advisor information when the screen loads
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (authProvider.user == null) {
+        return;
+      }
+      if (authProvider.user != null) {
+        await studentProvider.fetchStudent(authProvider.user!.uid);
+
+        if (studentProvider.student != null) {
+          await advisorProvider.fetchAdvisor(
+            studentProvider.student!.advisorRef,
+          );
+        }
+      }
+    });
+
     return Scaffold(
       backgroundColor: const Color(0xFFe1e5e6),
       endDrawer: const StudentAppDrawer(),
@@ -34,9 +58,9 @@ class AcademicProfilePage extends StatelessWidget {
             right: 20,
             left: 20,
             child: CustomAppBar(
-              title: Text(
-                "معلومات الطالب ${student.name}",
-                style: const TextStyle(
+              title: const Text(
+                'الملف الأكاديمي',
+                style: TextStyle(
                   color: Colors.black,
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -98,20 +122,20 @@ class AcademicProfilePage extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    student.name,
+                                    student?.name ?? '',
                                     style: const TextStyle(
                                       color: Colors.blue,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
                                   Text(
-                                    student.studentNumber.toString(),
+                                    student?.studentNumber.toString() ?? '',
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
                                   Text(
-                                    "المعدل التراكمي: ${student.gpa ?? ''}",
+                                    "المعدل التراكمي: ${student?.gpa ?? ''}",
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -135,32 +159,32 @@ class AcademicProfilePage extends StatelessWidget {
                                       MainAxisAlignment.spaceAround,
                                   children: [
                                     Text(
-                                      "الفصل: ${student.semester}",
+                                      "الفصل: ${student?.semester}",
                                       style: const TextStyle(
                                           fontWeight: FontWeight.bold),
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
-                                      "نوع الدراسة: ${student.studyType}",
+                                      "نوع الدراسة: ${student?.studyType}",
                                       style: const TextStyle(
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
-                                      student.major ?? '',
+                                      student?.major ?? '',
                                       style: const TextStyle(
                                           fontWeight: FontWeight.bold),
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
-                                      student.college ?? '',
+                                      student?.college ?? '',
                                       style: const TextStyle(
                                           fontWeight: FontWeight.bold),
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
-                                      "المستوى: ${student.level ?? ''}",
+                                      "المستوى: ${student?.level ?? ''}",
                                       style: const TextStyle(
                                           fontWeight: FontWeight.bold),
                                     ),
@@ -182,25 +206,25 @@ class AcademicProfilePage extends StatelessWidget {
                                     ),
                                     const SizedBox(height: 12),
                                     Text(
-                                      "الوضع العام: ${student.generalSituation ?? ''}",
+                                      "الوضع العام: ${student?.generalSituation ?? ''}",
                                       style: const TextStyle(
                                           fontWeight: FontWeight.bold),
                                     ),
                                     const SizedBox(height: 12),
                                     Text(
-                                      student.academicDegree ?? '',
+                                      student?.academicDegree ?? '',
                                       style: const TextStyle(
                                           fontWeight: FontWeight.bold),
                                     ),
                                     const SizedBox(height: 12),
                                     Text(
-                                      "ساعات الخطة: ${student.planHours ?? 0}",
+                                      "ساعات الخطة: ${student?.planHours ?? 0}",
                                       style: const TextStyle(
                                           fontWeight: FontWeight.bold),
                                     ),
                                     const SizedBox(height: 12),
                                     Text(
-                                      student.studentStatus ?? '',
+                                      student?.studentStatus ?? '',
                                       style: const TextStyle(
                                         fontWeight: FontWeight.bold,
                                       ),
@@ -222,19 +246,19 @@ class AcademicProfilePage extends StatelessWidget {
                                 ),
                               ),
                               Text(
-                                "مجتازة ${student.completedHours ?? ''}",
+                                "مجتازة ${student?.completedHours ?? ''}",
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
                               Text(
-                                "مسجلة ${student.registeredHours ?? ''}",
+                                "مسجلة ${student?.registeredHours ?? ''}",
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
                               Text(
-                                "متبقية ${student.remainingHours ?? ''}",
+                                "متبقية ${student?.remainingHours ?? ''}",
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -242,10 +266,10 @@ class AcademicProfilePage extends StatelessWidget {
                             ],
                           ),
                           const SizedBox(height: 20),
-                          // Text(
-                          //   "المشرف الأكاديمي: ${advisor?.name}",
-                          //   style: const TextStyle(fontWeight: FontWeight.bold),
-                          // ),
+                          Text(
+                            "المشرف الأكاديمي: ${advisor?.name}",
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
                         ],
                       ),
                     ),

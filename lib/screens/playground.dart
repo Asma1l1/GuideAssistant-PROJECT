@@ -1,90 +1,36 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:muieen_project/providers/advisor_provider.dart';
-import 'package:muieen_project/providers/auth_provider.dart';
-import 'package:provider/provider.dart';
-import '../../models/student_model.dart';
-import '../../providers/student_provider.dart';
-import '../widgets/student_app_drawer.dart';
-import '../widgets/customAppBar.dart';
 
-class StudentHomePage extends StatelessWidget {
-  const StudentHomePage({
+import 'widgets/customAppBar.dart';
+import 'widgets/student_app_drawer.dart';
+
+class PlayGroundScreen extends StatelessWidget {
+  const PlayGroundScreen({
     super.key,
   });
 
   @override
   Widget build(BuildContext context) {
-    final authProvider = Provider.of<AuthProvider>(context);
-    final studentProvider = Provider.of<StudentProvider>(context);
-    final advisorProvider = Provider.of<AdvisorProvider>(context);
-
-    // Fetch student and advisor information when the screen loads
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (authProvider.user == null) {
-        return;
-      }
-      if (authProvider.user != null) {
-        await studentProvider.fetchStudent(authProvider.user!.uid);
-        if (studentProvider.student != null) {
-          await advisorProvider.fetchAdvisor(
-            studentProvider.student!.advisorRef,
-          );
-        }
-      }
-    });
-
     return Scaffold(
-      backgroundColor: const Color(0xFFe1e5e6),
+      backgroundColor: const Color(0x1A4B4BC1),
       endDrawer: const StudentAppDrawer(),
       body: Stack(
         children: [
+          // Background Image
           Positioned(
             top: -5,
             left: -20,
             right: -5,
             child: Image.asset(
-              'assets/icons/bgShape.png',
+              'assets/icons/bgShape.png', // Replace with your image path
               fit: BoxFit.fill,
-              height: 200,
+              height: 200, // Adjust the height as needed
             ),
           ),
-          Positioned(
+          const Positioned(
             top: 20,
             right: 20,
             left: 20,
-            child: CustomAppBar(
-              leading: IconButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, "/StudentNotificationsScreen");
-                },
-                icon: const Icon(
-                  Icons.notifications,
-                  color: Colors.yellow,
-                ),
-              ),
-              title: const Text(
-                'الصفحة الرئيسية',
-                style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              trailing: Builder(
-                builder: (context) {
-                  return IconButton(
-                    onPressed: () {
-                      Scaffold.of(context).openEndDrawer();
-                    },
-                    icon: const Icon(
-                      Icons.menu,
-                      color: Colors.black,
-                    ),
-                  );
-                },
-              ),
-            ),
+            child: Placeholder(),
           ),
           Directionality(
             textDirection: TextDirection.rtl,
@@ -93,23 +39,21 @@ class StudentHomePage extends StatelessWidget {
               children: [
                 const SizedBox(height: 230),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 25.0),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 25.0,
+                  ),
                   child: Column(
                     children: [
-                      Text(
-                        studentProvider.student != null
-                            ? 'مرحباً  ${studentProvider.student!.name}'
-                            : 'مرحباً بالطالب',
-                        style: const TextStyle(
+                      const Text(
+                        'مرحباً فلان الفلاني',
+                        style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        advisorProvider.advisor != null
-                            ? 'مرشدك الأكاديمي: ${advisorProvider.advisor!.name}'
-                            : 'لم يتم تعيين مرشد أكاديمي بعد',
+                        'مرشدك الأكاديمي: فلان الفلاني',
                         style: TextStyle(
                           fontSize: 18,
                           color: Colors.grey[700],
@@ -126,14 +70,17 @@ class StudentHomePage extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: const BorderRadius.all(
-                        Radius.circular(20),
+                        Radius.circular(
+                          20,
+                        ),
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          blurRadius: 10,
-                          spreadRadius: 2,
-                          offset: const Offset(0, 5),
+                          color: Colors.black
+                              .withOpacity(0.2), // Shadow color with opacity
+                          blurRadius: 10, // Soften the shadow
+                          spreadRadius: 2, // Extend the shadow
+                          offset: const Offset(0, 5), // Shadow position (x, y)
                         ),
                       ],
                     ),
@@ -151,6 +98,7 @@ class StudentHomePage extends StatelessWidget {
                             Navigator.pushNamed(
                               context,
                               '/delete_request_screen',
+                              // arguments: widget.studentRef,
                             );
                           },
                         ),
@@ -160,29 +108,25 @@ class StudentHomePage extends StatelessWidget {
                           () {
                             Navigator.pushNamed(
                               context,
-                              '/add_request_screen',
+                              '/delete_request_screen',
+                              // arguments: widget.studentRef,
                             );
                           },
                         ),
                         _buildGridButton(
                           context,
                           'نموذج تغيير شعبة',
-                          () {
-                            Navigator.pushNamed(
-                              context,
-                              '/change_section_screen',
-                            );
-                          },
+                          () {},
                         ),
                         _buildGridButton(
                           context,
-                          'طلباتي',
-                          () {
-                            Navigator.pushNamed(
-                              context,
-                              '/Student_requests_screen',
-                            );
-                          },
+                          'نموذج الطلبات الارتباطية',
+                          () {},
+                        ),
+                        _buildGridButton(
+                          context,
+                          'الجدول الدراسي',
+                          () {},
                         ),
                       ],
                     ),
@@ -203,7 +147,7 @@ class StudentHomePage extends StatelessWidget {
   ) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.all(20),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(25),
         ),
@@ -217,7 +161,7 @@ class StudentHomePage extends StatelessWidget {
           title,
           textAlign: TextAlign.center,
           style: const TextStyle(
-            fontSize: 18,
+            fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
         ),

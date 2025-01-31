@@ -1,12 +1,21 @@
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
+import 'package:muieen_project/models/course_model.dart';
+import 'package:muieen_project/models/request_model.dart';
+import 'package:muieen_project/providers/advisor_provider.dart';
+import 'package:muieen_project/providers/auth_provider.dart';
+import 'package:muieen_project/providers/courses_provider.dart';
+import 'package:muieen_project/providers/request_group_provider.dart';
+import 'package:muieen_project/providers/student_provider.dart';
+import 'package:muieen_project/screens/widgets/customAppBar.dart';
+import 'package:provider/provider.dart';
 
 class DeleteRequestScreen extends StatefulWidget {
   static const String screenRoute = '/delete_request_screen';
 
-  final DocumentReference studentRef;
-
-  const DeleteRequestScreen({Key? key, required this.studentRef}) : super(key: key);
+  const DeleteRequestScreen({
+    super.key,
+  });
 
   @override
   _DeleteRequestScreenState createState() => _DeleteRequestScreenState();
@@ -14,160 +23,131 @@ class DeleteRequestScreen extends StatefulWidget {
 
 class _DeleteRequestScreenState extends State<DeleteRequestScreen> {
   final TextEditingController _reasonController = TextEditingController();
-  Map<String, dynamic>? _selectedCourse;
-  List<Map<String, dynamic>> _courses = [];
+  CourseModel? selectedCourse;
+  String? selectedSection;
+  String? alternativeSection;
+
+  List<CourseModel> _courses = [];
+  List<String> _sections = [];
 
   @override
-  void initState() {
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     _fetchCoursesFromFirestore();
   }
 
   void _fetchCoursesFromFirestore() async {
-    try {
-      final studentSnapshot = await widget.studentRef.get();
-      if (studentSnapshot.exists) {
-        final studentData = studentSnapshot.data() as Map<String, dynamic>?;
+    final coursesProvider =
+        Provider.of<CoursesProvider>(context, listen: false);
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final studentProvider =
+        Provider.of<StudentProvider>(context, listen: false);
 
-        if (studentData != null && studentData.containsKey('scheduleRef')) {
-          DocumentReference scheduleRef = studentData['scheduleRef'];
-          final scheduleSnapshot = await scheduleRef.get();
-
-          if (scheduleSnapshot.exists) {
-            final scheduleData = scheduleSnapshot.data() as Map<String, dynamic>?;
-
-            if (scheduleData != null && scheduleData.containsKey('courses')) {
-              List<dynamic> courseEntries = scheduleData['courses'];
-              List<Map<String, dynamic>> courseList = [];
-
-              for (var course in courseEntries) {
-                if (course is Map<String, dynamic> && course.containsKey('courseRef')) {
-                  DocumentReference courseRef = course['courseRef'];
-                  final courseSnapshot = await courseRef.get();
-
-                  if (courseSnapshot.exists) {
-                    final courseData = courseSnapshot.data() as Map<String, dynamic>?;
-
-                    if (courseData != null && courseData.containsKey('courseRef')) {
-                      DocumentReference planRef = courseData['courseRef'];
-                      final planSnapshot = await planRef.get();
-
-                      if (planSnapshot.exists) {
-                        final planData = planSnapshot.data() as Map<String, dynamic>?;
-                        final courseName = planData?['courseName'] ?? 'غير متوفر';
-
-                        courseList.add({
-                          'courseName': courseName,
-                          'courseCode': planData?['courseCode'] ?? 'غير متوفر',
-                          'courseRef': courseRef,
-                          'hours': planData?['hours'] ?? 0,
-                          'level': planData?['level'] ?? 0,
-                        });
-                      }
-                    }
-                  }
-                }
-              }
-
-              setState(() {
-                _courses = courseList;
-              });
-            }
-          }
-        }
-      }
-    } catch (e) {
-      print('خطأ في تحميل المقررات: $e');
+    if (authProvider.user == null) {
+      print("🚨 Error: User is null. Ensure the user is logged in.");
+      return;
     }
+
+    print("✅ Fetching student data for UID: ${authProvider.user!.uid}");
+
+    await studentProvider.fetchStudent(authProvider.user!.uid);
+
+    if (studentProvider.student == null) {
+      print("🚨 Error: Student data is null after fetch.");
+      return;
+    }
+
+    int? studentLevel = studentProvider.student!.level;
+    if (studentLevel == null) {
+      print("🚨 Error: Student level is null.");
+      return;
+    }
+
+    print("✅ Student Level: $studentLevel - Fetching courses...");
+
+    await coursesProvider.fetchCoursesForDeletingAndEditing(studentLevel);
+
+    if (coursesProvider.courses.isEmpty) {
+      print("🚨 Error: No courses found for this level.");
+    } else {
+      print(
+          "✅ Courses fetched successfully: ${coursesProvider.courses.length} courses found.");
+    }
+
+    setState(() {
+      _courses = coursesProvider.courses;
+    });
+  }
+
+  Future<String> getCourseName(DocumentReference courseRef) async {
+    final coursesProvider =
+        Provider.of<CoursesProvider>(context, listen: false);
+    final courseData = await coursesProvider.fetchCourseData(courseRef);
+    return courseData['courseName'];
+  }
+
+  void _updateSections(CourseModel course) {
+    final coursesProvider =
+        Provider.of<CoursesProvider>(context, listen: false);
+    final selectedCourseObj = coursesProvider.courses.firstWhere(
+      (course) => course.courseCode == course.courseCode,
+    );
+
+    setState(() {
+      _sections = selectedCourseObj.sections
+          .map((section) => section.name) // Extract section names
+          .toList();
+    });
   }
 
   void _submitRequest() async {
-    if (_selectedCourse != null && _reasonController.text.isNotEmpty) {
-      try {
-        final studentSnapshot = await widget.studentRef.get();
-        final studentData = studentSnapshot.data() as Map<String, dynamic>;
-        int studentLevel = studentData['level'] ?? 0;
-        int registeredHours = studentData['plan']['registeredHours'] ?? 0;
-        int courseLevel = _selectedCourse!['level'];
-        int courseHours = _selectedCourse!['hours'];
+    print('📌 Selected Course: $selectedCourse');
+    print('📌 Selected Section: $selectedSection');
+    print('📌 Alternative Section: $alternativeSection');
+    print('📌 Reason: ${_reasonController.text}');
 
-        if (studentLevel == courseLevel) {
-          _showCustomDialog('تم رفض الطلب', 'لا يمكن حذف هذا المقرر، حيث أنه مقرر أساسي في مستواك الحالي.');
-          return;
-        }
+    // Use `listen: false` for all Provider.of calls in this method
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final studentProvider =
+        Provider.of<StudentProvider>(context, listen: false);
+    final advisorProvider =
+        Provider.of<AdvisorProvider>(context, listen: false);
 
-        if ((registeredHours - courseHours) < 0) {
-          _showCustomDialog('تم رفض الطلب', 'لا يمكن حذف المقرر، حيث أن ذلك سيؤثر على الحد الأدنى من الساعات المطلوبة.');
-          return;
-        }
-
-        await widget.studentRef.update({
-          'plan.registeredHours': registeredHours - courseHours,
-        });
-
-        await FirebaseFirestore.instance.collection('requests').add({
-          'studentID': widget.studentRef,
-          'courseID': _selectedCourse!['courseRef'],
-          'courseName': _selectedCourse!['courseName'],
-          'reason': _reasonController.text,
-          'typeReq': 'DELETE',
-          'status': 'قيد المراجعة',
-          'dateSubmitted': FieldValue.serverTimestamp(),
-        });
-
-        _sendNotification('تم إرسال طلب الحذف للمقرر بنجاح');
-
-        _showCustomDialog('نجاح', 'تم إرسال الطلب بنجاح.');
-      } catch (e) {
-        _showCustomDialog('خطأ', 'حدث خطأ أثناء إرسال الطلب: $e');
-      }
-    } else {
-      _showCustomDialog('تنبيه', 'يرجى ملء جميع الحقول.');
+    if (authProvider.user == null) {
+      return;
     }
-  }
 
-  void _showCustomDialog(String title, String message) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return Directionality(
-          textDirection: TextDirection.rtl,
-          child: AlertDialog(
-            title: Text(
-              title,
-              textAlign: TextAlign.right,
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            content: Text(
-              message,
-              textAlign: TextAlign.right,
-              style: TextStyle(fontSize: 16),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                child: Text('حسنًا'),
-              ),
-            ],
-          ),
+    if (authProvider.user != null) {
+      await studentProvider.fetchStudent(authProvider.user!.uid);
+      if (studentProvider.student != null) {
+        await advisorProvider.fetchAdvisor(
+          studentProvider.student!.advisorRef,
         );
-      },
+      }
+    }
+
+    final requestGroupProvider = Provider.of<RequestGroupProvider>(
+      context,
+      listen: false,
     );
-  }
 
-  Future<void> _sendNotification(String message) async {
-    await FirebaseFirestore.instance.collection('Notifications').add({
-      'studentID': widget.studentRef,
-      'message': message,
-      'status': 'جديد',
-      'timestamp': FieldValue.serverTimestamp(),
-    });
-
+    requestGroupProvider.addRequest(
+      request: DeleteRequestModel(
+        courseRef: selectedCourse!,
+        dateSubmitted: null,
+        reason: _reasonController.text,
+      ),
+      studentRef: studentProvider.student!,
+      advisorRef: advisorProvider.advisor!,
+    );
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message, textAlign: TextAlign.right)),
+      const SnackBar(
+        content: Text(
+          'تم تسجيل طلبك بنجاح يمكنك الذهاب الى صفحة طلباتي لارسال الطلب للمشرف',
+        ),
+      ),
     );
+    Navigator.of(context).pop();
   }
 
   @override
@@ -176,84 +156,151 @@ class _DeleteRequestScreenState extends State<DeleteRequestScreen> {
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: const Color(0xFFDDE2E6),
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          title: const Text(
-            'نموذج طلب حذف مقرر',
-            textAlign: TextAlign.right,
-            style: TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.black),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ),
-        body: Stack(
+        body: Column(
           children: [
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Image.asset(
-                'assets/icons/notificationBackground.png',
-                fit: BoxFit.cover,
+            // Custom AppBar at the top
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+              child: CustomAppBar(
+                title: const Text(
+                  'نموذج طلب حذف مقرر',
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                trailing: Builder(
+                  builder: (context) {
+                    return IconButton(
+                      onPressed: () {
+                        Navigator.pop(
+                            context); // Ensures correct navigation context
+                      },
+                      icon: const Icon(
+                        Icons.arrow_forward_ios,
+                        color: Colors.black,
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+
+            // Main content with scrolling and background image
+            Expanded(
+              child: Stack(
                 children: [
-                  const SizedBox(height: 20),
-                  const Text('1- ما المقرر الذي تود حذفه ؟', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 10),
-                  DropdownButtonFormField<Map<String, dynamic>>(
-                    value: _selectedCourse,
-                    hint: const Text('حدد المادة المراد حذفها', style: TextStyle(color: Colors.grey)),
-                    items: _courses.map((course) {
-                      return DropdownMenuItem<Map<String, dynamic>>(
-                        value: course,
-                        child: Text('${course['courseName']} - ${course['courseCode']}'),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedCourse = value;
-                      });
-                    },
-                    decoration: InputDecoration(
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  // Background image at the bottom
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: Image.asset(
+                      'assets/icons/bgFooter.png', // Replace with your image path
+                      fit: BoxFit.fill,
+                      height: 250, // Adjust the height as needed
                     ),
                   ),
-                  const SizedBox(height: 20),
-                  const Text('2- ادخل سبب الحذف', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 10),
-                  TextField(
-                    controller: _reasonController,
-                    textDirection: TextDirection.rtl,
-                    decoration: InputDecoration(
-                      hintText: 'سبب الحذف',
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+
+                  // Scrollable content
+                  SingleChildScrollView(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          '1- ما المقرر الذي تود حذفه ؟',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        DropdownButtonFormField<CourseModel>(
+                          value: selectedCourse,
+                          hint: const Text(
+                            'حدد المادة المراد حذفها',
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                          items: _courses.map((course) {
+                            return DropdownMenuItem<CourseModel>(
+                              value: course,
+                              child: FutureBuilder<String>(
+                                future: getCourseName(course.courseRef),
+                                builder: (context, snapshot) {
+                                  if (snapshot.connectionState ==
+                                      ConnectionState.waiting) {
+                                    return const Text('Loading...');
+                                  } else if (snapshot.hasError) {
+                                    return Text('Error: ${snapshot.error}');
+                                  } else {
+                                    return Text(
+                                        snapshot.data ?? 'Unknown Course');
+                                  }
+                                },
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              selectedCourse = value;
+                            });
+                          },
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: Colors.white,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 50),
+                        const Text(
+                          '2- ادخل سبب الحذف',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        TextField(
+                          controller: _reasonController,
+                          textDirection: TextDirection.rtl,
+                          decoration: InputDecoration(
+                            hintText: 'سبب الحذف',
+                            filled: true,
+                            fillColor: Colors.white,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 150),
+                        Center(
+                          child: ElevatedButton(
+                            onPressed: _submitRequest,
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 80, vertical: 15),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                              backgroundColor: Colors.white,
+                            ),
+                            child: const Text(
+                              'إتمام',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const Spacer(),
-                  Center(
-                    child: ElevatedButton(
-                      onPressed: _submitRequest,
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 80, vertical: 15),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                        backgroundColor: Colors.black,
-                      ),
-                      child: const Text('إتمام', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
-                    ),
-                  ),
-                  const SizedBox(height: 40),
                 ],
               ),
             ),

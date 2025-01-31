@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:muieen_project/providers/student_provider.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 
@@ -12,29 +13,32 @@ class LoginStudentPage extends StatefulWidget {
 }
 
 class _LoginStudentPageState extends State<LoginStudentPage> {
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController(
+    text: "s443010264@uqu.edu.sa",
+  );
+  final TextEditingController _passwordController = TextEditingController(
+    text: "s122333",
+  );
   bool showSpinner = false;
 
-  // التعبير النمطي للتحقق من صيغة البريد الإلكتروني
   final RegExp emailRegExp = RegExp(r'^[a-zA-Z0-9._%+-]+@uqu\.edu\.sa$');
 
   void _loginStudent() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
 
-    // التحقق من أن الحقول ليست فارغة
     if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('يرجى إدخال البريد الإلكتروني وكلمة المرور')),
+        const SnackBar(
+            content: Text('يرجى إدخال البريد الإلكتروني وكلمة المرور')),
       );
       return;
     }
 
-    // التحقق من صحة البريد الإلكتروني
     if (!emailRegExp.hasMatch(email)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('يرجى إدخال بريد إلكتروني بصيغة @uqu.edu.sa')),
+        const SnackBar(
+            content: Text('يرجى إدخال بريد إلكتروني بصيغة @uqu.edu.sa')),
       );
       return;
     }
@@ -44,12 +48,11 @@ class _LoginStudentPageState extends State<LoginStudentPage> {
     });
 
     try {
-      // تسجيل الدخول
       await Provider.of<AuthProvider>(context, listen: false)
-          .signIn(email, password, 'STUDENT');
+          .signIn(email, password);
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('تم تسجيل الدخول بنجاح')),
+        const SnackBar(content: Text('تم تسجيل الدخول بنجاح')),
       );
 
       final studentSnapshot = await FirebaseFirestore.instance
@@ -57,16 +60,21 @@ class _LoginStudentPageState extends State<LoginStudentPage> {
           .where('email', isEqualTo: email.toLowerCase().trim())
           .get();
 
+      print(studentSnapshot.docs.first.data().toString());
+
       if (studentSnapshot.docs.isNotEmpty) {
         final studentRef = studentSnapshot.docs.first.reference;
+        await Provider.of<StudentProvider>(context, listen: false)
+            .fetchStudent(studentRef.id);
+
         Navigator.pushReplacementNamed(
           context,
           '/StudentHomePage',
-          arguments: studentRef, // تمرير المرجع ككائن DocumentReference
+          arguments: studentRef,
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('البريد الإلكتروني غير موجود')),
+          const SnackBar(content: Text('البريد الإلكتروني غير موجود')),
         );
       }
     } catch (e) {
@@ -83,152 +91,153 @@ class _LoginStudentPageState extends State<LoginStudentPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF1a3b47),
       appBar: AppBar(
-        title: Text('تسجيل الدخول - طالب'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: _emailController,
-              keyboardType: TextInputType.emailAddress,
-              decoration: InputDecoration(
-                labelText: 'الإيميل الأكاديمي',
-                prefixIcon: Icon(Icons.email),
-              ),
-            ),
-            SizedBox(height: 16),
-            TextField(
-              obscureText: true,
-              controller: _passwordController,
-              decoration: InputDecoration(
-                labelText: 'كلمة السر',
-                prefixIcon: Icon(Icons.lock),
-              ),
-            ),
-            SizedBox(height: 32),
-            showSpinner
-                ? CircularProgressIndicator()
-                : ElevatedButton(
-                    child: Text('دخول'),
-                    onPressed: _loginStudent,
-                  ),
-          ],
+        backgroundColor: Colors.transparent,
+        leading: IconButton(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          icon: const Icon(
+            Icons.arrow_back_ios,
+            color: Colors.white,
+          ),
         ),
+      ),
+      body: Column(
+        children: [
+          const SizedBox(height: 25),
+          const Text(
+            'تسجيل الدخول',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 100),
+          Expanded(
+              child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 120, horizontal: 80),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.only(
+                      topRight: Radius.circular(50),
+                      topLeft: Radius.circular(50),
+                    ),
+                  ),
+                  child: Column(children: [
+                    Column(
+                      children: [
+                        SizedBox(
+                          height: 60,
+                          child: Stack(
+                            children: [
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF1a3b47),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              Container(
+                                margin: const EdgeInsets.only(bottom: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: const Color(0xFFE6E3E3),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: TextField(
+                                  controller: _emailController,
+                                  keyboardType: TextInputType.emailAddress,
+                                  decoration: const InputDecoration(
+                                    labelText: 'الإيميل الأكاديمي',
+                                    labelStyle: TextStyle(
+                                      color: Colors.grey,
+                                    ),
+                                    prefixIcon: Icon(Icons.email),
+                                    border: InputBorder.none,
+                                    contentPadding: EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 16),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 50),
+                        SizedBox(
+                          height: 60,
+                          child: Stack(
+                            children: [
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF1a3b47),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              Container(
+                                margin: const EdgeInsets.only(bottom: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: const Color(0xFFE6E3E3),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: TextField(
+                                  obscureText: true,
+                                  controller: _passwordController,
+                                  decoration: const InputDecoration(
+                                    labelText: 'كلمة السر',
+                                    labelStyle: TextStyle(
+                                      color: Colors.grey,
+                                    ),
+                                    prefixIcon: Icon(Icons.lock),
+                                    border: InputBorder.none,
+                                    contentPadding: EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 16),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                        showSpinner
+                            ? const CircularProgressIndicator()
+                            : ElevatedButton(
+                                style: ButtonStyle(
+                                  padding: WidgetStateProperty.all<
+                                      EdgeInsetsGeometry>(
+                                    const EdgeInsets.symmetric(
+                                      horizontal: 50,
+                                      vertical: 20,
+                                    ),
+                                  ),
+                                  backgroundColor:
+                                      WidgetStateProperty.all<Color>(
+                                    const Color(0xFF1a3b47),
+                                  ),
+                                ),
+                                onPressed: _loginStudent,
+                                child: const Text(
+                                  'دخول',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
+                      ],
+                    ),
+                  ])))
+        ],
       ),
     );
   }
 }
-
-
-
-
-// //import 'screens/firstPage.dart';
-
-// class LoginStudentPage extends StatefulWidget {
-//   final String backgroundImage = 'assets/icons/login.png'; // مسار الخلفية الخاص بواجهة تسجيل الطالب
-//   @override
-//   _LoginStudentPageState createState() => _LoginStudentPageState();
-// }
-
-// class _LoginStudentPageState extends State<LoginStudentPage> {
-
-//   final TextEditingController _emailController = TextEditingController(); // حقل إدخال البريد الإلكتروني
-//   final TextEditingController _passwordController = TextEditingController(); // حقل إدخال كلمة المرور
-
-//   void _loginStudent() async {
-//     final email = _emailController.text.trim(); // قراءة البريد الإلكتروني
-//     final password = _passwordController.text.trim(); // قراءة كلمة المرور
-
-//     if (email.isEmpty || password.isEmpty) {
-//       // التحقق من الحقول الفارغة
-//       ScaffoldMessenger.of(context).showSnackBar(
-//         SnackBar(content: Text('يرجى إدخال البريد الإلكتروني وكلمة المرور')),
-//       );
-//       return;
-//     }
-
-//     try {
-//       // البحث عن المستخدم في Firestore
-//       final snapshot = await FirebaseFirestore.instance
-//           .collection('users')
-//           .where('email', isEqualTo: email)
-//           .where('role', isEqualTo: 'STUDENT')
-//           .get();
-
-//       if (snapshot.docs.isEmpty) {
-//         // إذا لم يتم العثور على المستخدم
-//         ScaffoldMessenger.of(context).showSnackBar(
-//           SnackBar(content: Text('البريد الإلكتروني غير موجود')),
-//         );
-//         return;
-//       }
-
-//       final userData = snapshot.docs.first.data();
-//       if (userData['password'] != password) {
-//         // إذا كانت كلمة المرور غير صحيحة
-//         ScaffoldMessenger.of(context).showSnackBar(
-//           SnackBar(content: Text('كلمة المرور غير صحيحة')),
-//         );
-//         return;
-//       }
-
-//       // تسجيل الدخول ناجح
-//       ScaffoldMessenger.of(context).showSnackBar(
-//         SnackBar(content: Text('تم تسجيل الدخول بنجاح')),
-//       );
-//       Navigator.pushNamed(context, '/studentDashboard'); // الانتقال إلى لوحة التحكم الخاصة بالطالب
-//     } catch (e) {
-//       // عرض رسالة خطأ عند حدوث مشكلة
-//       ScaffoldMessenger.of(context).showSnackBar(
-//         SnackBar(content: Text('حدث خطأ أثناء تسجيل الدخول: $e')),
-//       );
-//     }
-//   }
-
-//   @override
-//  Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: Text('تسجيل الدخول - طالب'),
-//       ),
-//       body: Container(
-//         decoration: BoxDecoration(
-//           image: DecorationImage(
-//             image: AssetImage(widget.backgroundImage), // تعيين الخلفية الخاصة بالكلاس
-//             fit: BoxFit.cover,
-//           ),
-//         ),
-//         child: Padding(
-//         padding: const EdgeInsets.all(16.0),
-//         child: Column(
-//           children: [
-//             TextField(
-//               controller: _emailController,
-//               decoration: InputDecoration(
-//                 labelText: 'الإيميل الأكاديمي',
-//                 prefixIcon: Icon(Icons.email),
-//               ),
-//             ),
-//             SizedBox(height: 16),
-//             TextField(
-//               controller: _passwordController,
-//               decoration: InputDecoration(
-//                 labelText: 'كلمة السر',
-//                 prefixIcon: Icon(Icons.lock),
-//               ),
-//               obscureText: true,
-//             ),
-//             SizedBox(height: 32),
-//             ElevatedButton(
-//               onPressed: _loginStudent,
-//               child: Text('دخول'),
-//             ),
-//           ],
-//         ),
-//       ),
-//       ),
-//     );
-//   }
-// }

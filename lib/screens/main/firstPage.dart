@@ -1,104 +1,88 @@
 import 'package:flutter/material.dart';
-// import 'package:firebase_core/firebase_core.dart';
-// import 'package:firebase_auth/firebase_auth.dart';
-// import 'package:cloud_firestore/cloud_firestore.dart';
-// import 'package:provider/provider.dart';
-
-// import 'package:flutter/material.dart';
-// import 'package:firebase_core/firebase_core.dart';
-// import 'package:firebase_auth/firebase_auth.dart';
-// import 'package:cloud_firestore/cloud_firestore.dart';
-// import 'package:provider/provider.dart';
 
 class FirstPage extends StatelessWidget {
+  const FirstPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           image: DecorationImage(
-            image: AssetImage('assets/icons/firstPage.png'), // خلفية الصفحة الرئيسية
+            image: AssetImage('assets/icons/firstPage.png'),
             fit: BoxFit.cover,
           ),
         ),
-      child: Center(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center, // محاذاة العناصر في المنتصف عموديًا
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            //Icon(Icons.school, size: 100, color: Colors.teal), // أيقونة التطبيق
-            SizedBox(height: 20),
-            Text(
+            const SizedBox(),
+            const Text(
               'معين',
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: 40),
             Row(
-              mainAxisAlignment: MainAxisAlignment.center, // محاذاة الأزرار في المنتصف أفقيًا
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 ElevatedButton(
                   onPressed: () {
-                    Navigator.pushNamed(context, '/loginStudent'); // الانتقال إلى شاشة تسجيل الطالب
+                    Navigator.pushNamed(
+                      context,
+                      '/loginStudent',
+                    );
                   },
-                  child: Text('طالب'),
+                  style: ButtonStyle(
+                    backgroundColor: WidgetStateProperty.all<Color>(
+                      const Color(0xFFfdf6e3),
+                    ),
+                    shape: WidgetStateProperty.all<RoundedRectangleBorder>(
+                      RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                  child: const Text(
+                    'طالب',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
                 ),
-                SizedBox(width: 20),
+                const SizedBox(width: 5),
                 ElevatedButton(
                   onPressed: () {
-                    Navigator.pushNamed(context, '/loginAdvisor'); // الانتقال إلى شاشة تسجيل المرشد
+                    Navigator.pushNamed(
+                      context,
+                      '/loginAdvisor',
+                    );
                   },
-                  child: Text('مرشد'),
+                  style: ButtonStyle(
+                    backgroundColor: WidgetStateProperty.all<Color>(
+                      const Color(0xFFfdf6e3),
+                    ),
+                    shape: WidgetStateProperty.all<RoundedRectangleBorder>(
+                      RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                  child: const Text(
+                    'مرشد',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
                 ),
               ],
             ),
           ],
         ),
       ),
-      ),
     );
   }
 }
-// class FirstPage extends StatelessWidget {
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       body: Center(
-//         child: Column(
-//           mainAxisAlignment: MainAxisAlignment.center, // محاذاة العناصر في المنتصف عموديًا
-//           children: [
-//             Icon(Icons.school, size: 100, color: Colors.teal), // أيقونة التطبيق
-//             SizedBox(height: 20),
-//             Text(
-//               'معين',
-//               style: TextStyle(
-//                 fontSize: 24,
-//                 fontWeight: FontWeight.bold,
-//               ),
-//             ),
-//             SizedBox(height: 40),
-//             Row(
-//               mainAxisAlignment: MainAxisAlignment.center, // محاذاة الأزرار في المنتصف أفقيًا
-//               children: [
-//                 ElevatedButton(
-//                   onPressed: () {
-//                     Navigator.pushNamed(context, '/loginStudent'); // الانتقال إلى شاشة تسجيل الطالب
-//                   },
-//                   child: Text('طالب'),
-//                 ),
-//                 SizedBox(width: 20),
-//                 ElevatedButton(
-//                   onPressed: () {
-//                     Navigator.pushNamed(context, '/loginAdvisor'); // الانتقال إلى شاشة تسجيل المرشد
-//                   },
-//                   child: Text('مرشد'),
-//                 ),
-//               ],
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }

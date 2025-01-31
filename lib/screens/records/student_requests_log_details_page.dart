@@ -6,10 +6,10 @@ import 'package:muieen_project/screens/widgets/student_app_drawer.dart';
 import 'package:muieen_project/screens/widgets/customAppBar.dart';
 import 'package:provider/provider.dart';
 
-class AdvisorRequestsLogPage extends StatelessWidget {
+class StudentRequestsLogDetailsPage extends StatelessWidget {
   final RequestGroupModel group;
 
-  const AdvisorRequestsLogPage({
+  const StudentRequestsLogDetailsPage({
     super.key,
     required this.group,
   });
@@ -195,29 +195,6 @@ class AdvisorRequestsLogPage extends StatelessWidget {
                   ),
                   child: const Text('تفاصيل'),
                 ),
-                request.status == RequestStatus.pending
-                    ? ElevatedButton(
-                        onPressed: () {
-                          // تأكيد button action
-                          _showCompletionDialog(context, request, index, group);
-                        },
-                        style: ButtonStyle(
-                          padding: WidgetStateProperty.all<EdgeInsetsGeometry>(
-                            const EdgeInsets.symmetric(
-                              horizontal: 50,
-                              vertical: 20,
-                            ),
-                          ),
-                          backgroundColor: WidgetStateProperty.all<Color>(
-                            const Color(0xFF1a3b47),
-                          ),
-                          foregroundColor: WidgetStateProperty.all<Color>(
-                            Colors.white,
-                          ),
-                        ),
-                        child: const Text('اتمام'),
-                      )
-                    : Container(),
               ],
             ),
           ],

@@ -25,10 +25,10 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('نموذج طلب ${widget.type}'),
-        backgroundColor: Color(0xFF3A6EA5),
+        backgroundColor: const Color(0xFF3A6EA5),
       ),
       body: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           image: DecorationImage(
             image: AssetImage('assets/background_pattern.png'),
             fit: BoxFit.cover,
@@ -47,9 +47,9 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
                       : widget.type == 'إضافة مادة'
                           ? 'حدد المادة التي ترغب في إضافتها:'
                           : 'حدد المادة التي ترغب في تغيير شعبتها:',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 DropdownButtonFormField<String>(
                   items: courses.map((String course) {
                     return DropdownMenuItem(value: course, child: Text(course));
@@ -59,14 +59,14 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
                       selectedCourse = value;
                     });
                   },
-                  decoration: InputDecoration(border: OutlineInputBorder(), filled: true, fillColor: Colors.white),
+                  decoration: const InputDecoration(border: OutlineInputBorder(), filled: true, fillColor: Colors.white),
                   validator: (value) => value == null ? 'يرجى اختيار المادة' : null,
                 ),
                 if (widget.type == 'تعديل شعبة') ...[
-                  SizedBox(height: 20),
-                  Text(
+                  const SizedBox(height: 20),
+                  const Text(
                     'اختر الشعبة الجديدة:',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   DropdownButtonFormField<String>(
                     items: sections.map((String section) {
@@ -77,12 +77,12 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
                         newSection = value;
                       });
                     },
-                    decoration: InputDecoration(border: OutlineInputBorder(), filled: true, fillColor: Colors.white),
+                    decoration: const InputDecoration(border: OutlineInputBorder(), filled: true, fillColor: Colors.white),
                   ),
                 ],
                 if (widget.type == 'حذف مادة') ...[
-                  SizedBox(height: 20),
-                  Text(
+                  const SizedBox(height: 20),
+                  const Text(
                     'ادخل سبب الحذف:',
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
@@ -92,7 +92,7 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
                         reason = value;
                       });
                     },
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       border: OutlineInputBorder(),
                       hintText: 'سبب الحذف',
                       filled: true,
@@ -101,7 +101,7 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
                     validator: (value) => value == null || value.isEmpty ? 'يرجى إدخال السبب' : null,
                   ),
                 ],
-                Spacer(),
+                const Spacer(),
                 ElevatedButton(
                   onPressed: () async {
                     if (_formKey.currentState!.validate()) {
@@ -115,15 +115,15 @@ class _RequestFormScreenState extends State<RequestFormScreen> {
                         'dateSubmitted': Timestamp.now(),
                       });
 
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم إرسال الطلب بنجاح')));
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم إرسال الطلب بنجاح')));
                       Navigator.pop(context);
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFF3A6EA5),
-                    padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                    backgroundColor: const Color(0xFF3A6EA5),
+                    padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                   ),
-                  child: Text('إتمام', style: TextStyle(fontSize: 18, color: Colors.white)),
+                  child: const Text('إتمام', style: TextStyle(fontSize: 18, color: Colors.white)),
                 ),
               ],
             ),

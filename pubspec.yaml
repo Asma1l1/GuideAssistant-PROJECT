@@ -19,7 +19,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.5.4
+  sdk: ^3.5.2
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -30,11 +30,14 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  firebase_core: ^3.8.1
-  cloud_firestore: ^5.5.1
+  firebase_core: ^3.8.2 
+  firebase_messaging: ^15.2.1
+  cloud_firestore: ^5.5.1 
   cupertino_icons: ^1.0.8
   firebase_auth: ^5.3.4
   provider: ^6.1.2
+  google_fonts: ^6.1.0 
+  flutter_screenutil: ^5.9.0 
     
     # implementation platform('com.google.firebase:firebase-bom:33.7.0')
     # implementation 'com.google.firebase:firebase-analytics'
@@ -72,6 +75,8 @@ flutter:
       - assets\icons\login.png
       - assets\icons\stHome.png
       - assets\icons\notificationBackground.png
+      - assets\icons\bgShape.png
+      - assets\icons\bgFooter.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
